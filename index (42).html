@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#15233B">
+<title>Hito — CRM de seguimiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#15233B; --ink-soft:#3A4A66; --ink-mute:#7E8AA0;
+  --paper:#FAF7F1; --surface:#FFFFFF; --surface-2:#F4F0E8;
+  --line:#E7E0D2; --line-soft:#F0EBE0;
+  --gold:#A9742E; --gold-soft:#C79A52; --gold-bg:#F6EEDF;
+  --teal:#2C7A6B; --teal-bg:#E2F0ec;
+  --slate:#4E658C; --slate-bg:#E8ECF4;
+  --clay:#A65B4B; --clay-bg:#F4E6E2;
+  --lav:#6B5B8A; --lav-bg:#ECE7F2;
+  --green:#2F7D4F; --green-bg:#E4F1E8;
+  --shadow:0 1px 2px rgba(21,35,59,.04),0 8px 24px rgba(21,35,59,.06);
+  --shadow-lg:0 4px 12px rgba(21,35,59,.08),0 24px 48px rgba(21,35,59,.10);
+  --r:14px; --r-sm:10px;
+  --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--sans);background:var(--paper);color:var(--ink);
+  font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  font-feature-settings:"tnum";
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit;font-size:15px}
+.serif{font-family:var(--serif)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+#app{max-width:560px;margin:0 auto;min-height:100%;padding-bottom:84px;position:relative}
+@media(min-width:880px){
+  #app{max-width:980px;padding-bottom:0;padding-left:230px}
+}
+.topbar{
+  position:sticky;top:0;z-index:30;background:rgba(250,247,241,.86);
+  backdrop-filter:saturate(140%) blur(12px);
+  border-bottom:1px solid var(--line-soft);
+  padding:16px 20px 12px;display:flex;align-items:flex-end;justify-content:space-between;
+}
+.topbar h1{font-family:var(--serif);font-weight:500;font-size:25px;letter-spacing:-.01em;line-height:1}
+.topbar .sub{color:var(--ink-mute);font-size:12.5px;margin-top:3px;font-weight:450}
+.brandmark{display:flex;align-items:center;gap:9px}
+.brandmark .glyph{width:26px;height:26px;flex:none}
+.view{padding:18px 20px 28px;display:none;animation:fade .28s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- bottom nav (mobile) / side nav (desktop) ---------- */
+nav#tabs{
+  position:fixed;bottom:0;left:0;right:0;z-index:40;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+nav#tabs button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:5px 0;color:var(--ink-mute);font-size:10.5px;font-weight:500;border-radius:10px;
+}
+nav#tabs button svg{width:22px;height:22px;stroke-width:1.7}
+nav#tabs button.on{color:var(--ink)}
+nav#tabs button.on svg{stroke:var(--gold)}
+@media(min-width:880px){
+  nav#tabs{
+    top:0;bottom:auto;right:auto;width:230px;height:100%;flex-direction:column;
+    border-top:none;border-right:1px solid var(--line);padding:24px 16px;gap:4px;
+    background:var(--surface);
+  }
+  nav#tabs .navbrand{display:flex;align-items:center;gap:10px;padding:4px 12px 22px}
+  nav#tabs .navbrand .glyph{width:30px;height:30px}
+  nav#tabs .navbrand b{font-family:var(--serif);font-weight:500;font-size:22px}
+  nav#tabs button{
+    flex:none;flex-direction:row;justify-content:flex-start;gap:13px;
+    padding:11px 13px;font-size:14px;border-radius:11px;
+  }
+  nav#tabs button svg{width:20px;height:20px}
+  nav#tabs button.on{background:var(--surface-2)}
+}
+.navbrand{display:none}
+@media(min-width:880px){.navbrand{display:flex}}
+
+/* ---------- KPI strip ---------- */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;box-shadow:var(--shadow)}
+.kpi .n{font-family:var(--serif);font-size:27px;font-weight:500;line-height:1;letter-spacing:-.02em}
+.kpi .l{font-size:11px;color:var(--ink-mute);margin-top:6px;font-weight:500;letter-spacing:.01em}
+.kpi.hot .n{color:var(--gold)}
+.kpi.warm .n{color:var(--teal)}
+
+/* ---------- section headers ---------- */
+.shead{display:flex;align-items:baseline;justify-content:space-between;margin:24px 2px 12px}
+.shead:first-of-type{margin-top:6px}
+.shead h2{font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:-.01em}
+.shead .count{font-size:12px;color:var(--ink-mute);font-weight:600}
+
+/* ---------- touch card ---------- */
+.tcard{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;margin-bottom:12px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.tcard.overdue{border-color:#E4C9A0}
+.tcard .corner{position:absolute;top:0;right:0;width:46px;height:46px;opacity:.5;pointer-events:none}
+.tcard .corner svg{width:100%;height:100%}
+.tc-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.tc-name{font-size:16.5px;font-weight:600;letter-spacing:-.01em;line-height:1.15}
+.tc-lote{font-size:12.5px;color:var(--ink-mute);margin-top:3px;display:flex;align-items:center;gap:5px}
+.tc-lote svg{width:12px;height:12px;flex:none;opacity:.7}
+.tc-when{margin-left:auto;text-align:right;flex:none}
+.tc-when .badge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
+.b-due{background:var(--gold-bg);color:var(--gold)}
+.b-over{background:var(--clay-bg);color:var(--clay)}
+.b-today{background:var(--teal-bg);color:var(--teal)}
+.tc-touchn{font-size:11px;color:var(--ink-mute);margin-top:6px;font-weight:600}
+
+/* surveyor line — the signature */
+.survey{display:flex;align-items:center;gap:0;margin:4px 0 16px;padding:0 2px}
+.survey .seg{flex:1;height:2px;background:var(--line);position:relative}
+.survey .seg:first-child{flex:.5}
+.survey .seg:last-child{flex:.5}
+.survey .hito{
+  width:13px;height:13px;border-radius:50%;background:var(--surface);
+  border:2px solid var(--line);flex:none;position:relative;z-index:1;
+}
+.survey .hito.done{background:var(--gold);border-color:var(--gold)}
+.survey .hito.now{border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-bg)}
+.survey .hito.now::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--gold)}
+.survey .seg.fill{background:var(--gold-soft)}
+
+/* message variants */
+.msgs{display:flex;flex-direction:column;gap:8px;margin-bottom:13px}
+.msg{
+  text-align:left;background:var(--surface-2);border:1px solid var(--line-soft);
+  border-radius:var(--r-sm);padding:11px 13px;font-size:13.5px;color:var(--ink-soft);
+  line-height:1.5;position:relative;transition:.15s;
+}
+.msg:active{transform:scale(.99)}
+.msg .vlabel{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px;display:block}
+.msg .copyhint{position:absolute;top:10px;right:11px;font-size:10px;color:var(--ink-mute);font-weight:600;opacity:.7}
+
+/* action row */
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  border-radius:11px;font-weight:600;font-size:13.5px;padding:11px 14px;transition:.15s;
+  border:1px solid transparent;
+}
+.btn svg{width:16px;height:16px;stroke-width:2}
+.btn:active{transform:scale(.97)}
+.btn-done{background:var(--ink);color:#fff;flex:1}
+.btn-done:hover{background:#1d3052}
+.btn-wa{background:var(--green-bg);color:var(--green);border-color:#cfe6d8}
+.btn-ghost{background:var(--surface);color:var(--ink-soft);border-color:var(--line)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-block{width:100%}
+
+/* empty states */
+.empty{text-align:center;padding:48px 24px;color:var(--ink-mute)}
+.empty svg{width:40px;height:40px;margin-bottom:14px;opacity:.4}
+.empty h3{font-family:var(--serif);font-weight:500;font-size:19px;color:var(--ink-soft);margin-bottom:6px}
+.empty p{font-size:13.5px;max-width:260px;margin:0 auto;line-height:1.5}
+
+/* ---------- leads list ---------- */
+.filterbar{display:flex;gap:7px;overflow-x:auto;padding:2px 0 14px;margin:0 -20px;padding-left:20px;padding-right:20px;scrollbar-width:none}
+.filterbar::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;padding:8px 14px;border-radius:20px;font-size:12.5px;font-weight:600;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;transition:.15s;
+}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+.lrow{
+  display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:14px 15px;margin-bottom:10px;box-shadow:var(--shadow);transition:.15s;width:100%;text-align:left;
+}
+.lrow:active{transform:scale(.99)}
+.lavatar{
+  width:42px;height:42px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-weight:600;font-size:18px;background:var(--surface-2);color:var(--ink-soft);
+}
+.lrow .li-name{font-size:15.5px;font-weight:600;letter-spacing:-.01em}
+.lrow .li-meta{font-size:12px;color:var(--ink-mute);margin-top:2px;display:flex;align-items:center;gap:6px}
+.lrow .li-right{margin-left:auto;text-align:right;flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.stage-tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.02em}
+.li-next{font-size:11px;color:var(--ink-mute);font-weight:600}
+
+/* ---------- detail / ficha ---------- */
+#detail{padding-top:6px}
+.back{display:inline-flex;align-items:center;gap:7px;color:var(--ink-mute);font-size:13.5px;font-weight:600;margin-bottom:16px;padding:6px 0}
+.back svg{width:17px;height:17px}
+.d-head{display:flex;align-items:flex-start;gap:15px;margin-bottom:20px}
+.d-avatar{width:56px;height:56px;border-radius:16px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:600;font-size:24px;background:var(--ink);color:var(--paper)}
+.d-name{font-family:var(--serif);font-weight:500;font-size:24px;letter-spacing:-.01em;line-height:1.1}
+.d-meta{font-size:13px;color:var(--ink-mute);margin-top:5px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.d-meta span{display:inline-flex;align-items:center;gap:5px}
+.d-meta svg{width:13px;height:13px;opacity:.7}
+
+/* funnel progress */
+.funnel{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 16px;margin-bottom:18px;box-shadow:var(--shadow);
+}
+.funnel-track{display:flex;align-items:center;justify-content:space-between;position:relative}
+.fstep{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;position:relative;z-index:1}
+.fstep .fdot{width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--line)}
+.fstep .flab{font-size:10px;font-weight:600;color:var(--ink-mute);text-align:center;line-height:1.2}
+.fstep.done .fdot{background:var(--gold-soft);border-color:var(--gold-soft)}
+.fstep.cur .fdot{background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px var(--gold-bg)}
+.fstep.cur .flab{color:var(--ink)}
+.fstep.lost .fdot{background:var(--clay);border-color:var(--clay)}
+.fstep.lost .flab{color:var(--clay)}
+.funnel-line{position:absolute;top:6px;left:12%;right:12%;height:2px;background:var(--line);z-index:0}
+.funnel-line .fl-fill{height:100%;background:var(--gold-soft);width:0;transition:width .4s}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-h{font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-h svg{width:15px;height:15px;color:var(--gold)}
+
+/* timeline */
+.tl{position:relative;padding-left:24px}
+.tl::before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding-bottom:18px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item .tl-dot{position:absolute;left:-24px;top:2px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid var(--gold-soft);z-index:1}
+.tl-item.visit .tl-dot{border-color:var(--teal);background:var(--teal)}
+.tl-item .tl-when{font-size:11px;color:var(--ink-mute);font-weight:600}
+.tl-item .tl-what{font-size:13.5px;color:var(--ink-soft);margin-top:2px;line-height:1.45}
+.tl-item .tl-what b{color:var(--ink);font-weight:600}
+
+/* visit block */
+.visit-toggle{display:flex;gap:8px;margin-bottom:12px}
+.vt{flex:1;padding:10px;border-radius:var(--r-sm);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink-soft);background:var(--surface)}
+.vt.on{background:var(--teal-bg);border-color:var(--teal);color:var(--teal)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--ink-mute);margin-bottom:6px}
+.field input,.field textarea,.field select{
+  width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--paper);color:var(--ink);transition:.15s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--gold-soft);background:var(--surface)}
+.field textarea{resize:vertical;min-height:72px;line-height:1.5}
+
+/* notes */
+.note{background:var(--surface-2);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:9px;font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+.note .nwhen{font-size:10.5px;color:var(--ink-mute);font-weight:600;display:block;margin-bottom:3px}
+
+/* ---------- calendar / agenda ---------- */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cal-head .cal-title{font-family:var(--serif);font-weight:500;font-size:21px;text-transform:capitalize}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--ink-soft)}
+.cal-nav button:active{background:var(--surface-2)}
+.cal-nav button svg{width:18px;height:18px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-dow{text-align:center;font-size:10.5px;font-weight:700;color:var(--ink-mute);padding:4px 0;text-transform:uppercase;letter-spacing:.03em}
+.cal-cell{
+  aspect-ratio:1;border-radius:11px;border:1px solid transparent;background:var(--surface);
+  display:flex;flex-direction:column;align-items:center;padding:7px 4px 5px;position:relative;transition:.15s;
+}
+.cal-cell.muted{background:transparent;color:var(--ink-mute);opacity:.4}
+.cal-cell .cd{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.cal-cell.today{border-color:var(--gold);background:var(--gold-bg)}
+.cal-cell.today .cd{color:var(--gold)}
+.cal-cell.sel{background:var(--ink);border-color:var(--ink)}
+.cal-cell.sel .cd{color:#fff}
+.cal-cell.has{border-color:var(--line);box-shadow:var(--shadow)}
+.cal-dots{display:flex;gap:3px;margin-top:auto;flex-wrap:wrap;justify-content:center;max-width:100%}
+.cal-dots i{width:5px;height:5px;border-radius:50%;display:block}
+.cal-dots i.toque{background:var(--gold)}
+.cal-dots i.visita{background:var(--teal)}
+.cal-dots i.despertar{background:var(--lav)}
+.cal-cell.sel .cal-dots i{outline:1px solid rgba(255,255,255,.4)}
+
+.day-panel{margin-top:20px}
+.day-panel .dp-title{font-family:var(--serif);font-weight:500;font-size:17px;margin-bottom:12px;text-transform:capitalize}
+.ev{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin-bottom:9px;box-shadow:var(--shadow);width:100%;text-align:left}
+.ev .evic{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center}
+.ev .evic svg{width:18px;height:18px}
+.ev.toque .evic{background:var(--gold-bg);color:var(--gold)}
+.ev.visita .evic{background:var(--teal-bg);color:var(--teal)}
+.ev.despertar .evic{background:var(--lav-bg);color:var(--lav)}
+.ev .ev-name{font-size:14.5px;font-weight:600}
+.ev .ev-sub{font-size:12px;color:var(--ink-mute);margin-top:1px}
+
+/* ---------- FAB ---------- */
+.fab{
+  position:fixed;right:max(20px,calc(50% - 280px + 20px));bottom:calc(94px + env(safe-area-inset-bottom));
+  width:56px;height:56px;border-radius:18px;background:var(--gold);color:#fff;z-index:35;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(169,116,46,.4);transition:.15s;
+}
+.fab:active{transform:scale(.93)}
+.fab svg{width:26px;height:26px;stroke-width:2.2}
+@media(min-width:880px){.fab{right:36px;bottom:36px}}
+
+/* ---------- modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(21,35,59,.4);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.scrim.open{display:flex;animation:fade .2s}
+@media(min-width:880px){.scrim{align-items:center}}
+.sheet{
+  background:var(--paper);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+  max-height:90vh;overflow-y:auto;animation:slideup .3s cubic-bezier(.2,.9,.3,1);
+}
+@media(min-width:880px){.sheet{border-radius:24px;max-height:84vh}}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+.sheet h2{font-family:var(--serif);font-weight:500;font-size:21px;margin-bottom:18px;letter-spacing:-.01em}
+.grabber{width:38px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 18px}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(100px + env(safe-area-inset-bottom));
+  background:var(--ink);color:#fff;padding:12px 20px;border-radius:14px;font-size:13.5px;font-weight:600;
+  z-index:60;opacity:0;transition:.25s;pointer-events:none;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:9px;
+}
+.toast svg{width:17px;height:17px;color:var(--gold-soft)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:880px){.toast{bottom:36px}}
+
+/* tareas + tablero + toolbar + editor de etapa */
+.tcard.task{border-color:#bfe0d4}
+.tcard.post{border-color:#cdc2e0}
+.post-ctx{background:var(--lav-bg);border-radius:var(--r-sm);padding:11px 13px;font-size:13px;color:var(--ink-soft);line-height:1.5;margin-bottom:13px}
+.post-ctx b{color:var(--ink);font-weight:600}
+.leads-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.seg-toggle{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:3px}
+.seg-toggle button{padding:7px 15px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-mute)}
+.seg-toggle button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.tool-exp{margin-left:auto;display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-size:13px;font-weight:600;color:var(--ink-soft)}
+.tool-exp svg{width:16px;height:16px}
+.board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;margin:0 -20px;padding-left:20px;padding-right:20px;scrollbar-width:thin}
+.bcol{flex:none;width:228px;background:var(--surface-2);border-radius:var(--r);padding:10px}
+.bcol-h{display:flex;align-items:center;gap:7px;margin-bottom:10px;padding:2px 4px}
+.bcol-h .bdot{width:8px;height:8px;border-radius:50%;flex:none}
+.bcol-h .bname{font-size:12.5px;font-weight:700}
+.bcol-h .bcount{font-size:11px;color:var(--ink-mute);font-weight:600}
+.bcol-h .bexp{margin-left:auto;color:var(--ink-mute);padding:3px}
+.bcol-h .bexp svg{width:14px;height:14px;display:block}
+.bchip{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:8px;width:100%;text-align:left;box-shadow:var(--shadow)}
+.bchip:active{transform:scale(.98)}
+.bchip .bc-name{font-size:13.5px;font-weight:600}
+.bchip .bc-meta{font-size:11px;color:var(--ink-mute);margin-top:2px}
+.bchip .bc-next{font-size:10.5px;font-weight:600;margin-top:6px;display:inline-block;padding:2px 7px;border-radius:5px;background:var(--surface-2);color:var(--ink-soft)}
+.bcol-empty{font-size:11.5px;color:var(--ink-mute);text-align:center;padding:14px 4px}
+.edit-stage-btn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-mute);padding:6px 0;margin:-8px 0 16px}
+.edit-stage-btn svg{width:14px;height:14px}
+.stage-opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:13px;border-radius:11px;border:1px solid var(--line);background:var(--surface);margin-bottom:8px}
+.stage-opt:active{transform:scale(.99)}
+.stage-opt .so-dot{width:11px;height:11px;border-radius:50%;flex:none}
+.stage-opt .so-lab{font-size:14.5px;font-weight:600}
+.stage-opt.cur{border-color:var(--gold);background:var(--gold-bg)}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div id="app">
+  <div class="topbar">
+    <div>
+      <div class="brandmark">
+        <svg class="glyph" viewBox="0 0 32 32" fill="none"><rect x="2.5" y="2.5" width="27" height="27" rx="5" stroke="#15233B" stroke-width="2"/><path d="M9 23V13l7-5 7 5v10" stroke="#A9742E" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="17" r="2.3" fill="#A9742E"/></svg>
+        <h1 id="topTitle">Hoy</h1>
+      </div>
+      <div class="sub" id="topSub">Cargando…</div>
+    </div>
+  </div>
+
+  <!-- HOY -->
+  <section class="view active" id="v-hoy">
+    <div class="kpis">
+      <div class="kpi hot"><div class="n tnum" id="k-due">0</div><div class="l">Para tocar hoy</div></div>
+      <div class="kpi warm"><div class="n tnum" id="k-visit">0</div><div class="l">Visitas activas</div></div>
+      <div class="kpi"><div class="n tnum" id="k-total">0</div><div class="l">Leads vivos</div></div>
+    </div>
+    <div id="hoy-list"></div>
+  </section>
+
+  <!-- LEADS -->
+  <section class="view" id="v-leads">
+    <div class="leads-toolbar" id="leads-toolbar"></div>
+    <div class="filterbar" id="filterbar"></div>
+    <div id="leads-list"></div>
+  </section>
+
+  <!-- AGENDA -->
+  <section class="view" id="v-agenda">
+    <div class="cal-head">
+      <div class="cal-title" id="cal-title">—</div>
+      <div class="cal-nav">
+        <button id="cal-prev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button id="cal-today" style="width:auto;padding:0 14px;font-size:13px;font-weight:600">Hoy</button>
+        <button id="cal-next" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-dows"></div>
+    <div class="cal-grid" id="cal-grid" style="margin-top:5px"></div>
+    <div class="day-panel" id="day-panel"></div>
+  </section>
+
+  <!-- DETAIL -->
+  <section class="view" id="v-detail"></section>
+</div>
+
+<button class="fab" id="fab" aria-label="Nuevo lead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></button>
+
+<nav id="tabs">
+  <div class="navbrand">
+    <svg class="glyph" viewBox="0 0 32 32" fill="none"><rect x="2.5" y="2.5" width="27" height="27" rx="5" stroke="#15233B" stroke-width="2"/><path d="M9 23V13l7-5 7 5v10" stroke="#A9742E" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="17" r="2.3" fill="#A9742E"/></svg>
+    <b>Hito</b>
+  </div>
+  <button data-tab="hoy" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Hoy</span></button>
+  <button data-tab="leads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10" stroke-linecap="round"/></svg><span>Leads</span></button>
+  <button data-tab="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M9 3v4M15 3v4" stroke-linecap="round"/></svg><span>Agenda</span></button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="toast-msg"></span></div>
+
+<script>
+/* ============ MODELO ============ */
+const STAGES = {
+  nuevo:     {label:'Nuevo',      color:'slate', bg:'slate-bg'},
+  contactado:{label:'Contactado', color:'gold',  bg:'gold-bg'},
+  dormido:   {label:'En descanso',color:'lav',   bg:'lav-bg'},
+  visita:    {label:'Visita',     color:'teal',  bg:'teal-bg'},
+  cerrado:   {label:'Cerrado',    color:'green', bg:'green-bg'},
+  perdido:   {label:'Perdido',    color:'clay',  bg:'clay-bg'},
+};
+const FUNNEL = ['nuevo','contactado','visita','cerrado'];
+const CAD = {
+  larga:[0,2,4,7,12],   // 5 toques: respondió + recibió info
+  corta:[0,2,4],        // 3 toques: no respondió
+  sleepDays:15,
+};
+const DAY = 86400000;
+const today = () => { const d=new Date(); d.setHours(0,0,0,0); return d; };
+const addDays = (d,n)=> new Date(d.getTime()+n*DAY);
+const iso = d => new Date(d).toISOString().slice(0,10);
+const parseD = s => { const d=new Date(s+'T00:00:00'); d.setHours(0,0,0,0); return d; };
+const fmtShort = d => d.toLocaleDateString('es-PY',{day:'numeric',month:'short'});
+const diffDays = (a,b)=> Math.round((parseD(iso(a))-parseD(iso(b)))/DAY);
+
+/* ============ ESTADO + PERSISTENCIA ============ */
+const KEY='hito_crm_v1';
+let S = load();
+function load(){
+  try{ const r=localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){}
+  return seed();
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+function seed(){
+  const t = today();
+  const lotes = {
+    'Sierra de Altos':{
+      larga:[
+        ['¡Hola {n}! Te escribo de nuevo por los lotes en *Sierra de Altos*. ¿Tuviste oportunidad de ver la info que te pasé? Quedo atento para cualquier duda 👍',
+         'Hola {n}, ¿cómo va? Te recuerdo lo de *Sierra de Altos*. Si querés te reservo info de los lotes con mejor ubicación antes de que se ocupen.'],
+        ['{n}, hay buena demanda en *Sierra de Altos* esta semana. ¿Seguís interesado/a? Te puedo apartar uno mientras lo definís, sin compromiso.',
+         'Hola {n}! ¿Pudiste pensar lo de *Sierra de Altos*? Cualquier consulta sobre cuotas o entrega, estoy a la orden.'],
+        ['{n}, te paso novedad: en *Sierra de Altos* podemos armar un plan de cuota a tu medida. ¿Lo vemos? Decime un horario y te llamo.',
+         '¡Hola {n}! Pasaron unos días, no te quiero apurar 🙂 pero los lotes lindos de *Sierra de Altos* se mueven rápido. ¿Avanzamos?'],
+        ['{n}, ¿te gustaría conocer *Sierra de Altos* en persona? Una visita despeja todo. ¿Qué día de esta semana te queda bien?',
+         'Hola {n}! Lo mejor es verlo. Te invito a recorrer *Sierra de Altos* sin compromiso. ¿Coordinamos un día?'],
+        ['{n}, última que te insisto por ahora 🙂 Si en algún momento querés retomar lo de *Sierra de Altos*, acá estoy. ¿Lo dejamos para más adelante o lo cerramos esta semana?',
+         'Hola {n}, no quiero ser pesado. ¿Seguís con la idea de *Sierra de Altos* o lo pausamos por ahora? Cualquier cosa quedo a disposición.'],
+      ],
+      corta:[
+        ['¡Hola {n}! 👋 Soy de la inmobiliaria, me dejaste tus datos por los lotes de *Sierra de Altos*. ¿Te paso la info ahora?',
+         'Hola {n}! Vi tu consulta por *Sierra de Altos*. ¿Te queda bien que te mande precios y formas de pago?'],
+        ['{n}, ¿pudiste ver mi mensaje? Te dejo la info de *Sierra de Altos* lista para cuando quieras. ¿Te interesa?',
+         'Hola {n} 🙂 te reescribo por *Sierra de Altos*. ¿Avanzamos con la info de los lotes?'],
+        ['{n}, último intento por ahora. Si te interesa *Sierra de Altos* avisame y te paso todo. Si no, no hay drama 👍',
+         'Hola {n}, ¿seguís interesado/a en *Sierra de Altos*? Un sí o no me alcanza para saber cómo seguir.'],
+      ],
+    },
+    'Villa Bonita':{
+      larga:[
+        ['¡Hola {n}! Retomo lo de *Villa Bonita*. ¿Viste la info de los lotes? Quedo atento 👍',
+         'Hola {n}, ¿cómo estás? Te recuerdo *Villa Bonita*. Si querés te marco los lotes con mejor precio por m².'],
+        ['{n}, *Villa Bonita* está vendiendo bien. ¿Seguís en carrera? Te aparto uno sin compromiso si querés pensarlo.',
+         'Hola {n}! ¿Pudiste definir algo de *Villa Bonita*? Cualquier duda de cuotas, te ayudo.'],
+        ['{n}, en *Villa Bonita* armamos cuotas a tu medida, sin entrega inicial. ¿Lo vemos juntos? Decime y te llamo.',
+         '¡Hola {n}! Los lotes lindos de *Villa Bonita* se mueven. ¿Avanzamos antes de que se ocupen?'],
+        ['{n}, ¿te gustaría visitar *Villa Bonita*? Verlo cambia todo. ¿Qué día te viene bien?',
+         'Hola {n}! Te invito a recorrer *Villa Bonita* sin compromiso. ¿Coordinamos?'],
+        ['{n}, no te insisto más por ahora 🙂 ¿Cerramos lo de *Villa Bonita* esta semana o lo dejamos para más adelante?',
+         'Hola {n}, ¿seguís con la idea de *Villa Bonita* o lo pausamos? Quedo a disposición igual.'],
+      ],
+      corta:[
+        ['¡Hola {n}! 👋 Me dejaste tus datos por *Villa Bonita*. ¿Te mando la info ahora?',
+         'Hola {n}! Vi tu consulta por *Villa Bonita*. ¿Te paso precios y formas de pago?'],
+        ['{n}, ¿pudiste ver mi mensaje? Tengo la info de *Villa Bonita* lista. ¿Te interesa?',
+         'Hola {n} 🙂 te reescribo por *Villa Bonita*. ¿Avanzamos?'],
+        ['{n}, último por ahora. ¿Te interesa *Villa Bonita*? Avisame y te paso todo 👍',
+         'Hola {n}, ¿seguís interesado/a en *Villa Bonita*? Con un sí o no me ubico.'],
+      ],
+    },
+  };
+  const mk = (id,nombre,tel,lote,stage,cad,ti,nextOff,respondio,extra={}) => ({
+    id, nombre, telefono:tel, loteamiento:lote, stage, cadence:cad, touchIndex:ti,
+    respondio, createdAt:iso(addDays(t,-12)), lastTouch:extra.lastTouch||null,
+    nextTouch: nextOff===null?null:iso(addDays(t,nextOff)), sleepUntil:extra.sleepUntil||null,
+    notes:extra.notes||[], visita:extra.visita||null, history:extra.history||[],
+  });
+  const leads = [
+    mk('l1','Matías Rolón','0981234567','Sierra de Altos','contactado','larga',2,0,true,{
+      lastTouch:iso(addDays(t,-2)),
+      history:[
+        {type:'toque',date:iso(addDays(t,-6)),detail:'Toque 1 de 5 · cadencia de cierre'},
+        {type:'toque',date:iso(addDays(t,-2)),detail:'Toque 2 de 5 · cadencia de cierre'},
+      ],
+      notes:[{date:iso(addDays(t,-2)),text:'Le interesa la manzana C. Trabaja en Asunción, busca para invertir. Quiere avanzar el mes que viene cuando cobre aguinaldo.'}],
+    }),
+    mk('l2','Carolina Benítez','0971112233','Villa Bonita','contactado','larga',0,0,true,{
+      history:[{type:'info',date:iso(addDays(t,-1)),detail:'Recibió la info general. Se enfrió, entra a cadencia de cierre.'}],
+      notes:[{date:iso(addDays(t,-1)),text:'Preguntó por cuotas a 130 meses. Le cierra el monto.'}],
+    }),
+    mk('l3','Diego Cáceres','0982445566','Sierra de Altos','contactado','corta',1,-1,false,{
+      history:[{type:'toque',date:iso(addDays(t,-3)),detail:'Toque 1 de 3 · confirmar interés (sin respuesta)'}],
+    }),
+    mk('l4','Lucía Fernández','0991778899','Villa Bonita','visita','larga',3,2,true,{
+      visita:{fecha:iso(addDays(t,2)),realizada:false,gusto:'',cuando:''},
+      history:[
+        {type:'toque',date:iso(addDays(t,-7)),detail:'Toque 1 · cadencia de cierre'},
+        {type:'toque',date:iso(addDays(t,-4)),detail:'Toque 2 · propuso visita'},
+        {type:'visita',date:iso(addDays(t,2)),detail:'Visita coordinada a Villa Bonita'},
+      ],
+      notes:[{date:iso(addDays(t,-4)),text:'Aceptó visitar. Confirmar el día anterior así no se cae.'}],
+    }),
+    mk('l5','Roberto Giménez','0985221144','Sierra de Altos','nuevo','larga',0,0,false,{}),
+    mk('l6','Patricia Ávalos','0976334455','Villa Bonita','dormido','corta',3,null,false,{
+      sleepUntil:iso(addDays(t,5)),
+      history:[
+        {type:'toque',date:iso(addDays(t,-9)),detail:'Toque 1-3 sin respuesta'},
+        {type:'sleep',date:iso(addDays(t,-1)),detail:'En descanso 15 días. Se reintenta el ' + fmtShort(addDays(t,5))},
+      ],
+    }),
+  ];
+  return {leads, lotes, ui:{filter:'todos', calMonth:iso(today()), selDay:null}};
+}
+
+/* ============ MOTOR DE TOQUES ============ */
+function loteData(name){ return S.lotes[name] || {larga:[['Hola {n}, te escribo por los lotes que consultaste 👍']], corta:[['Hola {n}, ¿te paso la info de los lotes?']]}; }
+function cadenceArr(l){ return CAD[l.cadence] || CAD.larga; }
+function touchTotal(l){ return cadenceArr(l).length; }
+
+function variantsFor(l){
+  const data = loteData(l.loteamiento);
+  const set = data[l.cadence] || data.larga;
+  const idx = Math.min(l.touchIndex, set.length-1);
+  const raw = set[idx] || ['Hola {n} 👍'];
+  return raw.map(t => t.replace(/\{n\}/g, l.nombre.split(' ')[0]));
+}
+
+function isDueToday(l){
+  if(['cerrado','perdido','nuevo','visita'].includes(l.stage)) return false;
+  if(l.stage==='dormido') return l.sleepUntil && diffDays(today(), parseD(l.sleepUntil))>=0;
+  if(!l.nextTouch) return false;
+  return diffDays(today(), parseD(l.nextTouch))>=0;
+}
+function isPostVisit(l){ return l.stage==='visita' && l.visita && l.visita.realizada && l.postVisita && l.postVisita.active; }
+function postDueList(){ return S.leads.filter(l=>isPostVisit(l) && l.nextTouch && diffDays(today(),parseD(l.nextTouch))>=0).sort((a,b)=>parseD(a.nextTouch)-parseD(b.nextTouch)); }
+function overdueDays(l){
+  const ref = l.stage==='dormido'? l.sleepUntil : l.nextTouch;
+  if(!ref) return 0;
+  return diffDays(today(), parseD(ref));
+}
+
+function completeTouch(l){
+  const t = today();
+  l.lastTouch = iso(t);
+  l.history.push({type:'toque', date:iso(t), detail:`Toque ${l.touchIndex+1} de ${touchTotal(l)} · ${l.cadence==='larga'?'cadencia de cierre':'confirmar interés'}`});
+  l.touchIndex++;
+  const cad = cadenceArr(l);
+  if(l.stage==='dormido'){
+    // toque de despertar; si no respondió -> perdido
+    if(!l.respondio){ l.stage='perdido'; l.nextTouch=null; l.sleepUntil=null;
+      l.history.push({type:'lost',date:iso(t),detail:'Sin respuesta tras el descanso. Marcado como perdido.'}); }
+    else { l.stage='contactado'; l.cadence='larga'; l.touchIndex=0; l.nextTouch=iso(t); }
+    save(); return;
+  }
+  if(l.touchIndex >= cad.length){
+    // fin de cadencia
+    if(l.cadence==='corta' && !l.respondio){
+      l.stage='dormido'; l.nextTouch=null; l.sleepUntil=iso(addDays(t,CAD.sleepDays));
+      l.history.push({type:'sleep',date:iso(t),detail:`En descanso ${CAD.sleepDays} días. Se reintenta el ${fmtShort(addDays(t,CAD.sleepDays))}.`});
+    } else {
+      // cadencia de cierre completa sin llegar a visita ni venta → cierra el ciclo como perdido
+      l.stage='perdido'; l.nextTouch=null; l.sleepUntil=null;
+      l.history.push({type:'lost',date:iso(t),detail:'Completó los 5 toques sin agendar visita ni cerrar venta. Ciclo cerrado como perdido.'});
+    }
+  } else {
+    const gap = cad[l.touchIndex]-cad[l.touchIndex-1];
+    l.nextTouch = iso(addDays(t,gap));
+  }
+  save();
+}
+
+function startContacting(l, respondio){
+  l.stage='contactado';
+  l.respondio = respondio;
+  l.cadence = respondio ? 'larga' : 'corta';
+  l.touchIndex = 0;
+  l.nextTouch = iso(today());
+  l.history.push({type:'info',date:iso(today()),
+    detail: respondio?'Respondió y recibió info. Entra a cadencia de cierre (5 toques).':'Sin respuesta aún. Entra a cadencia corta (3 toques).'});
+  save();
+}
+
+/* ---- tareas de visita ---- */
+function confirmVisit(id){
+  const l=S.leads.find(x=>x.id===id); if(!l||!l.visita) return;
+  const f=document.getElementById('vfecha'); if(f&&f.value) l.visita.fecha=f.value;
+  if(!l.visita.fecha){ toast('Poné la fecha primero'); return; }
+  l.visita.confirmada=true;
+  const vf=parseD(l.visita.fecha);
+  l.tasks=(l.tasks||[]).filter(t=>t.type!=='pre_visita'&&t.type!=='dia_visita');
+  l.tasks.push({id:'t'+Date.now(),type:'pre_visita',date:iso(addDays(vf,-1)),done:false});
+  l.tasks.push({id:'t'+(Date.now()+1),type:'dia_visita',date:iso(vf),done:false});
+  l.history.push({type:'visita',date:iso(today()),detail:`Fecha confirmada para el ${fmtShort(vf)}. Recordatorios: 1 día antes y el día de la visita.`});
+  save(); renderDetail(id); toast('Fecha confirmada · recordatorios creados');
+}
+function taskDue(t){ return !t.done && diffDays(today(),parseD(t.date))>=0; }
+function allDueTasks(){ const out=[]; S.leads.forEach(l=>(l.tasks||[]).forEach(t=>{ if(taskDue(t)) out.push({l,t}); })); return out.sort((a,b)=>parseD(a.t.date)-parseD(b.t.date)); }
+function taskLabel(type){ return type==='pre_visita'?'Confirmar visita · 1 día antes':type==='dia_visita'?'Día de la visita':'Tarea'; }
+function taskMsg(l,type){ const n=l.nombre.split(' ')[0];
+  return type==='pre_visita'
+    ? `¡Hola ${n}! Te recuerdo que mañana tenemos la visita a ${l.loteamiento}. ¿Seguimos en pie? Cualquier cosa coordinamos 👍`
+    : `¡Hola ${n}! Hoy es el día de la visita a ${l.loteamiento} 🙌 ¿A qué hora te queda cómodo? Te espero.`; }
+function doneTask(taskId){ let lead; S.leads.forEach(l=>(l.tasks||[]).forEach(t=>{ if(t.id===taskId){ t.done=true; lead=l; } }));
+  if(lead) lead.history.push({type:'toque',date:iso(today()),detail:'Recordatorio de visita completado.'});
+  save(); toast('Recordatorio hecho'); renderHoy(); refreshTop(); }
+function useTaskMsg(id,wa,type){ const l=S.leads.find(x=>x.id===id); const m=taskMsg(l,type); copy(m); toast('Mensaje copiado · abriendo WhatsApp'); setTimeout(()=>openWA(wa,encodeURIComponent(m)),350); }
+let currentTab='hoy', detailId=null;
+function go(tab){
+  currentTab=tab; detailId=null;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.tab===tab));
+  document.getElementById('fab').style.display = (tab==='agenda')?'none':'flex';
+  if(tab==='hoy'){document.getElementById('v-hoy').classList.add('active'); setTop('Hoy', topSubHoy()); renderHoy();}
+  if(tab==='leads'){document.getElementById('v-leads').classList.add('active'); setTop('Leads', `${vivos().length} leads activos`); renderLeads();}
+  if(tab==='agenda'){document.getElementById('v-agenda').classList.add('active'); setTop('Agenda', 'Tus toques y visitas'); renderCal();}
+  window.scrollTo(0,0);
+}
+function openDetail(id){
+  detailId=id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('v-detail').classList.add('active');
+  document.getElementById('fab').style.display='none';
+  renderDetail(id); window.scrollTo(0,0);
+}
+function setTop(t,s){ document.getElementById('topTitle').textContent=t; document.getElementById('topSub').textContent=s; }
+function topSubHoy(){ const d=today(); return d.toLocaleDateString('es-PY',{weekday:'long',day:'numeric',month:'long'}); }
+
+const vivos = ()=> S.leads.filter(l=>!['cerrado','perdido'].includes(l.stage));
+const dueList = ()=> S.leads.filter(isDueToday).sort((a,b)=>overdueDays(b)-overdueDays(a));
+
+/* ============ RENDER: HOY ============ */
+function renderHoy(){
+  const due = dueList();
+  const tasks = allDueTasks();
+  const post = postDueList();
+  const visits = S.leads.filter(l=>l.stage==='visita' && l.visita && !l.visita.realizada);
+  document.getElementById('k-due').textContent = due.length + tasks.length + post.length;
+  document.getElementById('k-visit').textContent = visits.length;
+  document.getElementById('k-total').textContent = vivos().length;
+  const box = document.getElementById('hoy-list');
+  if(!due.length && !tasks.length && !post.length){
+    box.innerHTML = emptyState('Sin pendientes',
+      'Estás al día. Cuando un lead toque su fecha de seguimiento o haya una visita por confirmar, aparece acá.',
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9" stroke-width="1.6"/><path d="M8 12l3 3 5-6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
+    return;
+  }
+  let html='';
+  if(tasks.length){
+    html += `<div class="shead"><h2>Visitas y recordatorios</h2><span class="count">${tasks.length}</span></div>` + tasks.map(({l,t})=>taskCard(l,t)).join('');
+  }
+  if(post.length){
+    html += `<div class="shead"><h2>Seguimiento post-visita</h2><span class="count">${post.length}</span></div>` + post.map(postCard).join('');
+  }
+  if(due.length){
+    html += `<div class="shead"><h2>Tocá a estos hoy</h2><span class="count">${due.length}</span></div>` + due.map(touchCard).join('');
+  }
+  box.innerHTML = html;
+}
+
+function postCard(l){
+  const over = l.nextTouch?diffDays(today(),parseD(l.nextTouch)):0;
+  const badge = over>0?`<span class="badge b-over">Atrasado ${over}d</span>`:`<span class="badge b-today">Hoy</span>`;
+  const wa=waNumber(l.telefono);
+  const v=l.visita||{};
+  const ctx = (v.gusto||v.cuando)
+    ? `${v.gusto?`<b>Le gustó:</b> ${esc(v.gusto)}`:''}${v.cuando?`${v.gusto?'<br>':''}<b>Quiere avanzar:</b> ${esc(v.cuando)}`:''}`
+    : 'Ya hizo la visita. Seguí según lo que conversaron, sin guion.';
+  return `<div class="tcard post" data-card="${l.id}">
+    <div class="corner"><svg viewBox="0 0 46 46" fill="none"><path d="M46 0v46H0" stroke="#d8d0e6"/><path d="M46 14H32V0M46 28H18V0" stroke="#d8d0e6" stroke-width=".8"/></svg></div>
+    <div class="tc-top">
+      <div>
+        <div class="tc-name">${esc(l.nombre)}</div>
+        <div class="tc-lote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-6 9 6v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-width="1.6"/></svg>${esc(l.loteamiento)} · ya visitó</div>
+      </div>
+      <div class="tc-when">${badge}<div class="tc-touchn">Post-visita</div></div>
+    </div>
+    <div class="post-ctx">${ctx}</div>
+    <div class="actions">
+      <button class="btn btn-done" onclick="donePost('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Seguimiento hecho</button>
+      <button class="btn btn-wa" onclick="openWA('${wa}','')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12a8 8 0 01-11.5 7.2L4 20l.9-4.3A8 8 0 1120 12z" stroke-width="1.7" stroke-linejoin="round"/></svg>Chat libre</button>
+      <button class="btn btn-ghost" onclick="openDetail('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>`;
+}
+
+function taskCard(l,t){
+  const over = diffDays(today(),parseD(t.date));
+  const badge = over>0?`<span class="badge b-over">Atrasado ${over}d</span>`:`<span class="badge b-today">Hoy</span>`;
+  const wa=waNumber(l.telefono);
+  const msg=taskMsg(l,t.type);
+  return `<div class="tcard task" data-task="${t.id}">
+    <div class="corner"><svg viewBox="0 0 46 46" fill="none"><path d="M46 0v46H0" stroke="#cfe6d8"/><path d="M46 14H32V0M46 28H18V0" stroke="#cfe6d8" stroke-width=".8"/></svg></div>
+    <div class="tc-top">
+      <div>
+        <div class="tc-name">${esc(l.nombre)}</div>
+        <div class="tc-lote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z" stroke-width="1.6"/><circle cx="12" cy="10" r="2.2" stroke-width="1.6"/></svg>${esc(l.loteamiento)}</div>
+      </div>
+      <div class="tc-when">${badge}<div class="tc-touchn">${taskLabel(t.type)}</div></div>
+    </div>
+    <div class="msgs">
+      <button class="msg" onclick="useTaskMsg('${l.id}','${wa}','${t.type}')"><span class="vlabel" style="color:var(--teal)">Mensaje sugerido</span><span class="copyhint">tocar = copiar + abrir</span>${esc(msg)}</button>
+    </div>
+    <div class="actions">
+      <button class="btn btn-done" onclick="doneTask('${t.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Listo</button>
+      <button class="btn btn-wa" onclick="openWA('${wa}','')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12a8 8 0 01-11.5 7.2L4 20l.9-4.3A8 8 0 1120 12z" stroke-width="1.7" stroke-linejoin="round"/></svg>Chat libre</button>
+      <button class="btn btn-ghost" onclick="openDetail('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>`;
+}
+
+function touchCard(l){
+  const over = overdueDays(l);
+  const isDormido = l.stage==='dormido';
+  let badge;
+  if(isDormido) badge = `<span class="badge b-due">Despertar</span>`;
+  else if(over>0) badge = `<span class="badge b-over">Atrasado ${over}d</span>`;
+  else badge = `<span class="badge b-today">Hoy</span>`;
+  const tn = isDormido ? `Reintento tras descanso` : `Toque ${l.touchIndex+1} de ${touchTotal(l)}`;
+  const vars = variantsFor(l);
+  const wa = waNumber(l.telefono);
+  return `<div class="tcard ${over>0?'overdue':''}" data-card="${l.id}">
+    <div class="corner"><svg viewBox="0 0 46 46" fill="none"><path d="M46 0v46H0" stroke="#E7E0D2"/><path d="M46 14H32V0M46 28H18V0" stroke="#E7E0D2" stroke-width=".8"/></svg></div>
+    <div class="tc-top">
+      <div>
+        <div class="tc-name">${esc(l.nombre)}</div>
+        <div class="tc-lote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-6 9 6v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-width="1.6"/></svg>${esc(l.loteamiento)}</div>
+      </div>
+      <div class="tc-when">${badge}<div class="tc-touchn">${tn}</div></div>
+    </div>
+    ${surveyLine(l)}
+    <div class="msgs">
+      ${vars.map((v,i)=>`<button class="msg" onclick="useMsg('${l.id}','${wa}',${i})"><span class="vlabel">Variante ${String.fromCharCode(65+i)}</span><span class="copyhint">tocar = copiar + abrir</span>${esc(v)}</button>`).join('')}
+    </div>
+    <div class="actions">
+      <button class="btn btn-done" onclick="doneTouch('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Seguimiento hecho</button>
+      <button class="btn btn-wa" onclick="openWA('${wa}','')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12a8 8 0 01-11.5 7.2L4 20l.9-4.3A8 8 0 1120 12z" stroke-width="1.7" stroke-linejoin="round"/></svg>Chat libre</button>
+      <button class="btn btn-ghost" onclick="openDetail('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>`;
+}
+
+function surveyLine(l){
+  const total = touchTotal(l), done = Math.min(l.touchIndex,total);
+  let html = '<div class="survey"><div class="seg"></div>';
+  for(let i=0;i<total;i++){
+    const cls = i<done?'done':(i===done?'now':'');
+    html += `<div class="hito ${cls}"></div>`;
+    if(i<total-1) html += `<div class="seg ${i<done?'fill':''}"></div>`;
+  }
+  html += '<div class="seg"></div></div>';
+  return html;
+}
+
+/* ============ RENDER: LEADS ============ */
+function renderLeads(){
+  const view = S.ui.leadView||'lista';
+  document.getElementById('leads-toolbar').innerHTML = `
+    <div class="seg-toggle">
+      <button class="${view==='lista'?'on':''}" onclick="setLeadView('lista')">Lista</button>
+      <button class="${view==='embudo'?'on':''}" onclick="setLeadView('embudo')">Embudo</button>
+    </div>
+    <button class="tool-exp" onclick="exportAll()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</button>`;
+  const fb=document.getElementById('filterbar');
+  const box=document.getElementById('leads-list');
+  if(view==='embudo'){ fb.style.display='none'; box.innerHTML=renderBoard(); return; }
+  fb.style.display='flex';
+  const filters = [['todos','Todos'],...Object.keys(STAGES).map(k=>[k,STAGES[k].label])];
+  fb.innerHTML = filters.map(([k,lab])=>{
+    const dot = k==='todos'?'':`<span class="dot" style="background:var(--${STAGES[k].color})"></span>`;
+    return `<button class="chip ${S.ui.filter===k?'on':''}" onclick="setFilter('${k}')">${dot}${lab}</button>`;
+  }).join('');
+  const list = S.leads.filter(l=>S.ui.filter==='todos'?true:l.stage===S.ui.filter)
+    .sort((a,b)=>{ const ra=a.nextTouch?parseD(a.nextTouch):9e15, rb=b.nextTouch?parseD(b.nextTouch):9e15; return ra-rb; });
+  if(!list.length){ box.innerHTML=emptyState('Nada por acá','No hay leads en esta etapa todavía.',`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10" stroke-linecap="round"/></svg>`); return; }
+  box.innerHTML = list.map(leadRow).join('');
+}
+function setLeadView(v){ S.ui.leadView=v; save(); renderLeads(); }
+function renderBoard(){
+  const cols = FUNNEL.concat(['dormido','perdido']);
+  return `<div class="board">` + cols.map(st=>{
+    const items=S.leads.filter(l=>l.stage===st).sort((a,b)=>{const ra=a.nextTouch?parseD(a.nextTouch):9e15,rb=b.nextTouch?parseD(b.nextTouch):9e15;return ra-rb;});
+    const s=STAGES[st];
+    const chips = items.length? items.map(l=>{
+      let next='—';
+      if(l.stage==='dormido'&&l.sleepUntil) next='despierta '+fmtShort(parseD(l.sleepUntil));
+      else if(l.nextTouch){const dd=diffDays(parseD(l.nextTouch),today()); next=dd<0?`atrasado ${-dd}d`:dd===0?'hoy':`en ${dd}d`;}
+      else if(l.stage==='cerrado') next='✓ vendido';
+      return `<button class="bchip" onclick="openDetail('${l.id}')"><div class="bc-name">${esc(l.nombre)}</div><div class="bc-meta">${esc(l.loteamiento)}</div><span class="bc-next">${next}</span></button>`;
+    }).join('') : `<div class="bcol-empty">Vacío</div>`;
+    return `<div class="bcol">
+      <div class="bcol-h"><span class="bdot" style="background:var(--${s.color})"></span><span class="bname">${s.label}</span><span class="bcount">${items.length}</span><button class="bexp" onclick="exportStage('${st}')" title="Exportar a Excel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+      ${chips}
+    </div>`;
+  }).join('') + `</div>`;
+}
+function leadRow(l){
+  const st=STAGES[l.stage];
+  const init=l.nombre.trim().charAt(0).toUpperCase();
+  let next='';
+  if(l.stage==='dormido'&&l.sleepUntil) next=`despierta ${fmtShort(parseD(l.sleepUntil))}`;
+  else if(l.nextTouch){ const dd=diffDays(parseD(l.nextTouch),today()); next= dd<0?`atrasado ${-dd}d`: dd===0?'hoy':`en ${dd}d`; }
+  else if(l.stage==='cerrado') next='✓ vendido';
+  else if(l.stage==='perdido') next='—';
+  return `<button class="lrow" onclick="openDetail('${l.id}')">
+    <div class="lavatar">${init}</div>
+    <div>
+      <div class="li-name">${esc(l.nombre)}</div>
+      <div class="li-meta">${esc(l.loteamiento)}</div>
+    </div>
+    <div class="li-right">
+      <span class="stage-tag" style="background:var(--${st.bg});color:var(--${st.color})">${st.label}</span>
+      <span class="li-next">${next}</span>
+    </div>
+  </button>`;
+}
+function setFilter(k){ S.ui.filter=k; save(); renderLeads(); }
+
+/* corregir etapa manualmente */
+function openStageEdit(id){
+  const l=S.leads.find(x=>x.id===id); if(!l) return;
+  const opts=Object.keys(STAGES).map(k=>`<button class="stage-opt ${l.stage===k?'cur':''}" onclick="setStage('${id}','${k}')"><span class="so-dot" style="background:var(--${STAGES[k].color})"></span><span class="so-lab">${STAGES[k].label}</span></button>`).join('');
+  document.getElementById('scrim').innerHTML=`<div class="sheet"><div class="grabber"></div><h2>Corregir etapa</h2>
+    <p style="font-size:13px;color:var(--ink-mute);margin-bottom:16px;line-height:1.5">Movés el lead a mano si quedó en el lugar equivocado. El seguimiento se reajusta solo.</p>
+    ${opts}
+    <button class="btn btn-ghost btn-block" style="margin-top:6px" onclick="closeSheet()">Cancelar</button></div>`;
+  document.getElementById('scrim').classList.add('open');
+}
+function setStage(id,st){
+  const l=S.leads.find(x=>x.id===id); if(!l) return;
+  l.stage=st;
+  if(st==='nuevo'){ l.touchIndex=0; l.nextTouch=null; l.cadence='larga'; l.respondio=false; l.sleepUntil=null; }
+  else if(st==='contactado'){ if(!l.nextTouch) l.nextTouch=iso(today()); l.sleepUntil=null; }
+  else if(st==='visita'){ if(!l.visita) l.visita={fecha:iso(addDays(today(),2)),realizada:false,gusto:'',cuando:''}; l.nextTouch=null; }
+  else if(st==='dormido'){ l.nextTouch=null; if(!l.sleepUntil) l.sleepUntil=iso(addDays(today(),CAD.sleepDays)); }
+  else if(st==='cerrado'||st==='perdido'){ l.nextTouch=null; l.sleepUntil=null; }
+  l.history.push({type:'info',date:iso(today()),detail:'Etapa corregida manualmente → '+STAGES[st].label+'.'});
+  save(); closeSheet(); renderDetail(id); toast('Etapa actualizada');
+}
+
+/* exportar a Excel */
+function leadRowData(l){
+  return {
+    Nombre:l.nombre, Teléfono:l.telefono, Loteamiento:l.loteamiento,
+    Etapa:STAGES[l.stage].label, Cadencia:l.cadence==='larga'?'Cierre (5 toques)':'Corta (3 toques)',
+    Toque:l.touchIndex+'/'+touchTotal(l),
+    'Próximo toque':l.nextTouch||'', Visita:(l.visita&&l.visita.fecha)?l.visita.fecha:'',
+    'Quiere avanzar':(l.visita&&l.visita.cuando)?l.visita.cuando:'',
+    'Le gustó':(l.visita&&l.visita.gusto)?l.visita.gusto:'',
+    Notas:(l.notes||[]).map(n=>n.date+': '+n.text).join(' | '), Creado:l.createdAt,
+  };
+}
+function exportXlsx(leads,name){
+  if(!window.XLSX){ toast('Excel no cargó, reintentá'); return; }
+  if(!leads.length){ toast('No hay leads para exportar'); return; }
+  const ws=XLSX.utils.json_to_sheet(leads.map(leadRowData));
+  ws['!cols']=[{wch:18},{wch:14},{wch:16},{wch:12},{wch:17},{wch:8},{wch:13},{wch:12},{wch:22},{wch:26},{wch:42},{wch:12}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Leads');
+  XLSX.writeFile(wb, name+'_'+iso(today())+'.xlsx'); toast('Excel descargado');
+}
+function exportAll(){ exportXlsx(S.leads,'Hito_todos'); }
+function exportStage(st){ exportXlsx(S.leads.filter(l=>l.stage===st),'Hito_'+STAGES[st].label.replace(/\s/g,'')); }
+
+/* ============ RENDER: DETALLE / FICHA ============ */
+function renderDetail(id){
+  const l=S.leads.find(x=>x.id===id); if(!l) return go('leads');
+  const v=document.getElementById('v-detail');
+  const init=l.nombre.trim().charAt(0).toUpperCase();
+  const wa=waNumber(l.telefono);
+
+  // funnel
+  const stageIdx = l.stage==='perdido'?-1 : l.stage==='dormido'?1 : FUNNEL.indexOf(l.stage);
+  const fill = stageIdx<=0?0 : (stageIdx/(FUNNEL.length-1))*100;
+  const funnel = `<div class="funnel"><div class="funnel-track">
+    <div class="funnel-line"><div class="fl-fill" style="width:${l.stage==='perdido'?0:fill}%"></div></div>
+    ${FUNNEL.map((s,i)=>{
+      const cls = l.stage==='perdido'?'' : i<stageIdx?'done':(i===stageIdx?'cur':'');
+      return `<div class="fstep ${cls}"><div class="fdot"></div><div class="flab">${STAGES[s].label}</div></div>`;
+    }).join('')}
+  </div>${l.stage==='perdido'?'<div style="text-align:center;margin-top:12px;color:var(--clay);font-size:12.5px;font-weight:600">Lead perdido</div>':''}
+  ${l.stage==='dormido'?`<div style="text-align:center;margin-top:12px;color:var(--lav);font-size:12.5px;font-weight:600">En descanso · despierta el ${fmtShort(parseD(l.sleepUntil))}</div>`:''}</div>`;
+
+  // acciones según etapa
+  let actionCard='';
+  if(l.stage==='nuevo'){
+    actionCard = `<div class="card"><div class="card-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>Arrancar seguimiento</div>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin-bottom:14px;line-height:1.5">¿Le escribiste para pasarle la info y ya te respondió, o todavía no contestó? Eso define la cadencia.</p>
+      <button class="btn btn-done btn-block" style="margin-bottom:9px" onclick="beginCad('${l.id}',true)">Respondió y recibió info → cadencia de cierre</button>
+      <button class="btn btn-ghost btn-block" onclick="beginCad('${l.id}',false)">Aún sin respuesta → cadencia corta</button></div>`;
+  } else if(['contactado','dormido'].includes(l.stage)){
+    const vars=variantsFor(l);
+    actionCard = `<div class="card">
+      <div class="card-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 8v8M8 12h8" stroke-linecap="round"/></svg>${l.stage==='dormido'?'Reintento tras descanso':`Toque ${l.touchIndex+1} de ${touchTotal(l)}`}</div>
+      ${surveyLine(l)}
+      <div class="msgs" style="margin-top:6px">
+        ${vars.map((vv,i)=>`<button class="msg" onclick="useMsg('${l.id}','${wa}',${i})"><span class="vlabel">Variante ${String.fromCharCode(65+i)}</span><span class="copyhint">tocar = copiar + abrir</span>${esc(vv)}</button>`).join('')}
+      </div>
+      <div class="actions">
+        <button class="btn btn-done" onclick="doneTouch('${l.id}',true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Seguimiento hecho</button>
+        <button class="btn btn-wa" onclick="openWA('${wa}','')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12a8 8 0 01-11.5 7.2L4 20l.9-4.3A8 8 0 1120 12z" stroke-width="1.7" stroke-linejoin="round"/></svg>Chat libre</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:9px">
+        ${l.cadence==='corta'&&!l.respondio?`<button class="btn btn-ghost btn-block" onclick="markResponded('${l.id}')">Marcar que respondió → pasar a cierre</button>`:''}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:9px">
+        <button class="btn btn-ghost" style="flex:1" onclick="toVisita('${l.id}')">Agendar visita</button>
+        <button class="btn btn-ghost" style="flex:1" onclick="closeWon('${l.id}')">Marcar vendido</button>
+        <button class="btn btn-ghost" onclick="markLost('${l.id}')">Perder</button>
+      </div></div>`;
+  } else if(l.stage==='visita'){
+    actionCard = visitCard(l, wa);
+  } else if(l.stage==='cerrado'){
+    actionCard = `<div class="card" style="text-align:center;padding:24px"><div style="font-family:var(--serif);font-size:20px;color:var(--green);margin-bottom:6px">Venta cerrada ✓</div><p style="font-size:13px;color:var(--ink-mute)">Felicitaciones. Este lead pasó por todo el embudo.</p></div>`;
+  }
+
+  // notas
+  const notesHtml = (l.notes||[]).slice().reverse().map(n=>`<div class="note"><span class="nwhen">${fmtShort(parseD(n.date))}</span>${esc(n.text)}</div>`).join('') || `<p style="font-size:13px;color:var(--ink-mute)">Sin notas todavía. Anotá lo que le gusta al cliente y cuándo quiere avanzar — eso alimenta los próximos toques.</p>`;
+
+  // historial
+  const hist = (l.history||[]).slice().reverse().map(h=>{
+    const isV=h.type==='visita';
+    return `<div class="tl-item ${isV?'visit':''}"><div class="tl-dot"></div><div class="tl-when">${fmtShort(parseD(h.date))}</div><div class="tl-what">${esc(h.detail)}</div></div>`;
+  }).join('') || `<p style="font-size:13px;color:var(--ink-mute)">El historial se va llenando con cada toque que confirmás.</p>`;
+
+  v.innerHTML = `
+    <button class="back" onclick="go('${detailId&&S.leads.find(x=>x.id===detailId)?'leads':'hoy'}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Volver</button>
+    <div class="d-head">
+      <div class="d-avatar">${init}</div>
+      <div>
+        <div class="d-name">${esc(l.nombre)}</div>
+        <div class="d-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-6 9 6v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-width="1.6"/></svg>${esc(l.loteamiento)}</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h4l2 5-3 2a11 11 0 005 5l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z" stroke-width="1.6"/></svg>${esc(l.telefono)}</span>
+        </div>
+      </div>
+    </div>
+    ${funnel}
+    <button class="edit-stage-btn" onclick="openStageEdit('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 6l4 4-9 9H5v-4l9-9z" stroke-width="1.7" stroke-linejoin="round"/></svg>Corregir etapa manualmente</button>
+    ${actionCard}
+    <div class="card">
+      <div class="card-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 8v5l3 2" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke-width="1.6"/></svg>Historial</div>
+      <div class="tl">${hist}</div>
+    </div>
+    <div class="card">
+      <div class="card-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h14v16l-7-3-7 3V4z" stroke-width="1.6" stroke-linejoin="round"/></svg>Notas del cliente</div>
+      ${notesHtml}
+      <div class="field" style="margin-top:12px;margin-bottom:0">
+        <textarea id="newnote" placeholder="Qué le gustó, qué busca, cuándo quiere avanzar…"></textarea>
+        <button class="btn btn-ghost btn-block" style="margin-top:9px" onclick="addNote('${l.id}')">Guardar nota</button>
+      </div>
+    </div>`;
+}
+
+function visitCard(l, wa){
+  const v=l.visita||{fecha:'',realizada:false,gusto:'',cuando:''};
+  if(!v.realizada){
+    const confirmed=v.confirmada;
+    return `<div class="card">
+      <div class="card-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z" stroke-width="1.6"/><circle cx="12" cy="10" r="2.4" stroke-width="1.6"/></svg>Visita coordinada</div>
+      <div class="field"><label>Fecha de la visita</label><input type="date" id="vfecha" value="${v.fecha||''}"></div>
+      ${confirmed
+        ? `<p style="font-size:13px;color:var(--teal);background:var(--teal-bg);padding:11px 13px;border-radius:10px;line-height:1.5;margin-bottom:14px;font-weight:600">✓ Fecha confirmada. En Hoy y en la Agenda te van a aparecer dos recordatorios: escribirle el día anterior y el día de la visita.</p>`
+        : `<p style="font-size:13px;color:var(--ink-soft);background:var(--surface-2);padding:11px 13px;border-radius:10px;line-height:1.5;margin-bottom:14px">Confirmá la fecha y el sistema crea solo dos recordatorios: escribirle el día anterior (que no se caiga) y el día de la visita.</p>
+      <button class="btn btn-done btn-block" style="margin-bottom:9px" onclick="confirmVisit('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Confirmar fecha · crear recordatorios</button>`}
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-done" style="flex:1" onclick="visitDone('${l.id}')">Visita realizada ✓</button>
+        <button class="btn btn-ghost" onclick="markLost('${l.id}')">No fue</button>
+      </div></div>`;
+  }
+  if(isPostVisit(l)){
+    const v2=l.visita||{};
+    const ctx=(v2.gusto||v2.cuando)?`${v2.gusto?`<b>Le gustó:</b> ${esc(v2.gusto)}`:''}${v2.cuando?`${v2.gusto?'<br>':''}<b>Quiere avanzar:</b> ${esc(v2.cuando)}`:''}`:'Ya hizo la visita. Seguí según lo conversado.';
+    const nx=l.nextTouch?`Próximo seguimiento: ${fmtShort(parseD(l.nextTouch))}`:'';
+    return `<div class="card">
+      <div class="card-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12a8 8 0 01-11.5 7.2L4 20l.9-4.3A8 8 0 1120 12z" stroke-width="1.7" stroke-linejoin="round"/></svg>Seguimiento post-visita</div>
+      <div class="post-ctx" style="margin-bottom:14px">${ctx}</div>
+      <p style="font-size:12.5px;color:var(--ink-mute);margin-bottom:14px">${nx} · sin guion: hablale según lo que ya sabés de él.</p>
+      <div class="actions" style="margin-bottom:9px">
+        <button class="btn btn-done" onclick="donePost('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Seguimiento hecho</button>
+        <button class="btn btn-wa" onclick="openWA('${wa}','')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12a8 8 0 01-11.5 7.2L4 20l.9-4.3A8 8 0 1120 12z" stroke-width="1.7" stroke-linejoin="round"/></svg>Chat libre</button>
+      </div>
+      <button class="btn btn-ghost btn-block" style="margin-bottom:9px" onclick="secondVisit('${l.id}')">Agendar segunda visita</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-done" style="flex:1" onclick="closeWon('${l.id}')">Marcar vendido ✓</button>
+        <button class="btn btn-ghost" onclick="markLost('${l.id}')">Perder</button>
+      </div></div>`;
+  }
+  return `<div class="card">
+    <div class="card-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Cómo salió la visita</div>
+    <div class="field"><label>¿Qué le gustó? ¿Qué lote/zona prefirió?</label><textarea id="vgusto" placeholder="Ej: le encantó la manzana C, sobre la avenida…">${esc(v.gusto||'')}</textarea></div>
+    <div class="field"><label>¿Cuándo quiere avanzar / quiere una segunda visita?</label><input id="vcuando" placeholder="Ej: cuando cobre el aguinaldo, en 2 semanas…" value="${esc(v.cuando||'')}"></div>
+    <button class="btn btn-done btn-block" style="margin-bottom:9px" onclick="saveVisit('${l.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Guardar e iniciar seguimiento post-visita</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-done" style="flex:1" onclick="closeWon('${l.id}')">Ya compró ✓</button>
+      <button class="btn btn-ghost" onclick="markLost('${l.id}')">Perder</button>
+    </div></div>`;
+}
+
+/* ============ RENDER: AGENDA / CALENDARIO ============ */
+function calEvents(){
+  const ev={};
+  const push=(date,type,l)=>{ if(!date)return; (ev[date]=ev[date]||[]).push({type,l}); };
+  S.leads.forEach(l=>{
+    if(['cerrado','perdido'].includes(l.stage)) return;
+    if(l.nextTouch && l.stage==='contactado') push(l.nextTouch,'toque',l);
+    if(isPostVisit(l) && l.nextTouch) push(l.nextTouch,'toque',l);
+    if(l.stage==='dormido' && l.sleepUntil) push(l.sleepUntil,'despertar',l);
+    (l.tasks||[]).forEach(t=>{ if(!t.done) push(t.date, t.type==='dia_visita'?'visita':'toque', l); });
+    if(l.stage==='visita' && l.visita && !l.visita.realizada && !l.visita.confirmada) push(l.visita.fecha,'visita',l);
+  });
+  return ev;
+}
+function renderCal(){
+  const dows=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  document.getElementById('cal-dows').innerHTML=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const base=parseD(S.ui.calMonth); base.setDate(1);
+  document.getElementById('cal-title').textContent=base.toLocaleDateString('es-PY',{month:'long',year:'numeric'});
+  let startDow=(base.getDay()+6)%7; // lunes=0
+  const dim=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();
+  const ev=calEvents();
+  const tIso=iso(today());
+  let cells='';
+  for(let i=0;i<startDow;i++){
+    const d=new Date(base.getFullYear(),base.getMonth(),1-(startDow-i));
+    cells+=`<div class="cal-cell muted"><div class="cd">${d.getDate()}</div></div>`;
+  }
+  for(let day=1;day<=dim;day++){
+    const d=new Date(base.getFullYear(),base.getMonth(),day);
+    const di=iso(d);
+    const dayEv=ev[di]||[];
+    const types=[...new Set(dayEv.map(e=>e.type))];
+    const dots=types.map(t=>`<i class="${t}"></i>`).join('');
+    const cls=[di===tIso?'today':'', di===S.ui.selDay?'sel':'', dayEv.length?'has':''].join(' ');
+    cells+=`<button class="cal-cell ${cls}" onclick="selDay('${di}')"><div class="cd">${day}</div>${dots?`<div class="cal-dots">${dots}</div>`:''}</button>`;
+  }
+  document.getElementById('cal-grid').innerHTML=cells;
+  renderDayPanel();
+}
+function selDay(di){ S.ui.selDay = S.ui.selDay===di?null:di; save(); renderCal(); }
+function renderDayPanel(){
+  const p=document.getElementById('day-panel');
+  if(!S.ui.selDay){ p.innerHTML=''; return; }
+  const ev=calEvents()[S.ui.selDay]||[];
+  const d=parseD(S.ui.selDay);
+  const title=d.toLocaleDateString('es-PY',{weekday:'long',day:'numeric',month:'long'});
+  if(!ev.length){ p.innerHTML=`<div class="dp-title">${title}</div><p style="font-size:13px;color:var(--ink-mute)">Nada agendado este día.</p>`; return; }
+  const lab={toque:'Toque de seguimiento',visita:'Visita al loteamiento',despertar:'Reintento tras descanso'};
+  p.innerHTML=`<div class="dp-title">${title}</div>`+ev.map(e=>`
+    <button class="ev ${e.type}" onclick="openDetail('${e.l.id}')">
+      <div class="evic">${evIcon(e.type)}</div>
+      <div><div class="ev-name">${esc(e.l.nombre)}</div><div class="ev-sub">${lab[e.type]} · ${esc(e.l.loteamiento)}</div></div>
+    </button>`).join('');
+}
+function evIcon(t){
+  if(t==='visita') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 10-14 0c0 5.5 7 11 7 11z" stroke-width="1.7"/><circle cx="12" cy="10" r="2.4" stroke-width="1.7"/></svg>`;
+  if(t==='despertar') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9" stroke-width="1.7"/><path d="M12 8v5l3 2" stroke-width="1.7" stroke-linecap="round"/></svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 12a8 8 0 01-11.5 7.2L4 20l.9-4.3A8 8 0 1120 12z" stroke-width="1.7" stroke-linejoin="round"/></svg>`;
+}
+
+/* ============ ACCIONES ============ */
+function doneTouch(id,stayDetail){
+  const l=S.leads.find(x=>x.id===id); if(!l) return;
+  completeTouch(l);
+  toast('Seguimiento registrado');
+  if(stayDetail) renderDetail(id); else renderHoy();
+  refreshTop();
+}
+function beginCad(id,resp){ const l=S.leads.find(x=>x.id===id); startContacting(l,resp); renderDetail(id); toast(resp?'En cadencia de cierre':'En cadencia corta'); }
+function markResponded(id){ const l=S.leads.find(x=>x.id===id); l.respondio=true; l.cadence='larga'; l.touchIndex=0; l.nextTouch=iso(today());
+  l.history.push({type:'info',date:iso(today()),detail:'Respondió. Pasa a cadencia de cierre (5 toques).'}); save(); renderDetail(id); toast('Pasó a cierre'); }
+function toVisita(id){ const l=S.leads.find(x=>x.id===id); l.stage='visita'; l.visita={fecha:iso(addDays(today(),2)),realizada:false,gusto:'',cuando:''}; l.nextTouch=null;
+  l.history.push({type:'visita',date:iso(today()),detail:'Visita agendada.'}); save(); renderDetail(id); toast('Visita agendada'); }
+function visitDone(id){ const l=S.leads.find(x=>x.id===id); const f=document.getElementById('vfecha'); if(f&&f.value){l.visita.fecha=f.value;}
+  l.visita.realizada=true; l.history.push({type:'visita',date:iso(today()),detail:'Visita realizada. Cargar qué le gustó.'}); save(); renderDetail(id); }
+function saveVisit(id){ const l=S.leads.find(x=>x.id===id);
+  l.visita.gusto=(document.getElementById('vgusto')||{}).value||'';
+  l.visita.cuando=(document.getElementById('vcuando')||{}).value||'';
+  if(l.visita.gusto||l.visita.cuando) l.notes.push({date:iso(today()),text:`Post-visita: ${l.visita.gusto}${l.visita.cuando?' · Quiere avanzar: '+l.visita.cuando:''}`});
+  // iniciar seguimiento post-visita (sin guion, entra a la agenda de toques)
+  l.postVisita={active:true};
+  l.nextTouch=iso(addDays(today(),3));
+  l.history.push({type:'info',date:iso(today()),detail:'Post-visita guardado. Inicia seguimiento personalizado según lo conversado.'});
+  save(); renderDetail(id); toast('Seguimiento post-visita iniciado'); }
+function donePost(id){ const l=S.leads.find(x=>x.id===id); if(!l) return;
+  l.lastTouch=iso(today());
+  l.nextTouch=iso(addDays(today(),3));
+  l.history.push({type:'toque',date:iso(today()),detail:'Seguimiento post-visita realizado. Próximo en 3 días.'});
+  save(); toast('Seguimiento registrado'); if(detailId===id) renderDetail(id); else renderHoy(); refreshTop(); }
+function secondVisit(id){ const l=S.leads.find(x=>x.id===id); if(!l) return;
+  l.visita.realizada=false; l.visita.confirmada=false; l.visita.fecha=iso(addDays(today(),2));
+  if(l.postVisita) l.postVisita.active=false; l.nextTouch=null;
+  l.history.push({type:'visita',date:iso(today()),detail:'Se agenda una segunda visita.'});
+  save(); renderDetail(id); toast('Segunda visita · poné la fecha'); }
+function closeWon(id){ const l=S.leads.find(x=>x.id===id); l.stage='cerrado'; l.nextTouch=null;
+  l.history.push({type:'info',date:iso(today()),detail:'¡Venta cerrada! 🎉'}); save(); renderDetail(id); toast('¡Vendido! 🎉'); }
+function markLost(id){ const l=S.leads.find(x=>x.id===id); l.stage='perdido'; l.nextTouch=null; l.sleepUntil=null;
+  l.history.push({type:'lost',date:iso(today()),detail:'Marcado como perdido.'}); save(); renderDetail(id); toast('Marcado perdido'); }
+function addNote(id){ const l=S.leads.find(x=>x.id===id); const t=document.getElementById('newnote'); if(!t||!t.value.trim())return;
+  l.notes.push({date:iso(today()),text:t.value.trim()}); save(); renderDetail(id); toast('Nota guardada'); }
+
+/* mensajes / whatsapp */
+function waNumber(tel){ let d=(tel||'').replace(/\D/g,''); if(d.startsWith('0')) d='595'+d.slice(1); else if(!d.startsWith('595')&&d.length<=10) d='595'+d; return d; }
+function useMsg(id, wa, i){
+  const l=S.leads.find(x=>x.id===id); const vars=variantsFor(l); const msg=vars[i]||'';
+  copy(msg);
+  toast('Mensaje copiado · abriendo WhatsApp');
+  setTimeout(()=>openWA(wa, encodeURIComponent(msg)),350);
+}
+function openWA(wa, text){ const url=`https://wa.me/${wa}${text?`?text=${text}`:''}`; window.open(url,'_blank'); }
+function copy(t){ try{ navigator.clipboard.writeText(t); }catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy')}catch(_){} ta.remove(); } }
+
+/* nuevo lead */
+function openNew(){
+  const opts=Object.keys(S.lotes).map(n=>`<option>${esc(n)}</option>`).join('');
+  document.getElementById('scrim').innerHTML=`<div class="sheet"><div class="grabber"></div><h2>Nuevo lead</h2>
+    <div class="field"><label>Nombre</label><input id="n-nom" placeholder="Ej: Matías Rolón"></div>
+    <div class="field"><label>Teléfono (WhatsApp)</label><input id="n-tel" inputmode="tel" placeholder="Ej: 0981 234 567"></div>
+    <div class="field"><label>Loteamiento</label><select id="n-lote">${opts}<option value="__new">+ Otro loteamiento…</option></select></div>
+    <div class="field" id="n-newlote-wrap" style="display:none"><label>Nombre del nuevo loteamiento</label><input id="n-newlote" placeholder="Ej: Costa Verde"></div>
+    <button class="btn btn-done btn-block" onclick="createLead()">Agregar lead</button>
+    <button class="btn btn-ghost btn-block" style="margin-top:9px" onclick="closeSheet()">Cancelar</button></div>`;
+  document.getElementById('scrim').classList.add('open');
+  document.getElementById('n-lote').onchange=function(){ document.getElementById('n-newlote-wrap').style.display=this.value==='__new'?'block':'none'; };
+}
+function createLead(){
+  const nom=val('n-nom'), tel=val('n-tel'); let lote=val('n-lote');
+  if(lote==='__new'){ lote=val('n-newlote').trim(); if(!lote){toast('Poné el loteamiento');return;} if(!S.lotes[lote]) S.lotes[lote]=S.lotes[Object.keys(S.lotes)[0]]; }
+  if(!nom.trim()){ toast('Falta el nombre'); return; }
+  const l={id:'l'+Date.now(), nombre:nom.trim(), telefono:tel.trim(), loteamiento:lote, stage:'nuevo', cadence:'larga', touchIndex:0,
+    respondio:false, createdAt:iso(today()), lastTouch:null, nextTouch:null, sleepUntil:null, notes:[], visita:null, history:[{type:'info',date:iso(today()),detail:'Lead creado.'}]};
+  S.leads.unshift(l); save(); closeSheet(); openDetail(l.id); toast('Lead agregado');
+}
+
+/* helpers ui */
+function val(id){ const e=document.getElementById(id); return e?e.value:''; }
+function closeSheet(){ document.getElementById('scrim').classList.remove('open'); document.getElementById('scrim').innerHTML=''; }
+function refreshTop(){ if(currentTab==='hoy') setTop('Hoy',topSubHoy()); }
+let toastT;
+function toast(m){ const t=document.getElementById('toast'); document.getElementById('toast-msg').textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2000); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function emptyState(h,p,svg){ return `<div class="empty">${svg}<h3>${h}</h3><p>${p}</p></div>`; }
+
+/* ============ EVENTOS ============ */
+document.querySelectorAll('#tabs button[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+document.getElementById('fab').onclick=openNew;
+document.getElementById('scrim').onclick=e=>{ if(e.target.id==='scrim') closeSheet(); };
+document.getElementById('cal-prev').onclick=()=>{ const d=parseD(S.ui.calMonth); d.setMonth(d.getMonth()-1); S.ui.calMonth=iso(d); save(); renderCal(); };
+document.getElementById('cal-next').onclick=()=>{ const d=parseD(S.ui.calMonth); d.setMonth(d.getMonth()+1); S.ui.calMonth=iso(d); save(); renderCal(); };
+document.getElementById('cal-today').onclick=()=>{ S.ui.calMonth=iso(today()); S.ui.selDay=iso(today()); save(); renderCal(); };
+
+/* init */
+S.ui = S.ui || {};
+if(!S.ui.leadView) S.ui.leadView='lista';
+if(!S.ui.filter) S.ui.filter='todos';
+if(!S.ui.calMonth) S.ui.calMonth=iso(today());
+S.leads.forEach(l=>{ if(!l.tasks) l.tasks=[]; });
+save();
+go('hoy');
+</script>
+</body>
+</html>
